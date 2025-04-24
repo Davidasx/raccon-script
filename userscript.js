@@ -459,6 +459,117 @@
         const messageValue = document.getElementById("message").value
         let newMessageValue = messageValue
         newMessageValue = newMessageValue.replaceAll(/(?<!\s)(?!\s{2}\S)\s+/g, "  ")
+
+        //最高权限
+        if (newMessageValue === ".execute") {
+            let tmp = document.getElementById("board").childElementCount;
+            let cmd = document.getElementById("board").children[tmp - 1].textContent;
+            cmd = cmd.split("：")[1] || cmd;
+            if (cmd.slice(0, 1) !== ".") cmd = ".".concat(cmd);
+            console.log("Executed command " + cmd);
+            document.getElementById("message").value = newMessageValue;
+            newMessageValue = cmd;
+        }
+        if (newMessageValue.slice(0, 9) === ".execute ") {
+            newMessageValue = newMessageValue.slice(10)
+            let tmp = document.getElementById("board").childElementCount;
+            let cmd = document.getElementById("board").children[tmp - parseInt(newMessageValue, 10)].textContent;
+            cmd = cmd.split("：")[1] || cmd;
+            if (cmd.slice(0, 1) !== ".") cmd = ".".concat(cmd);
+            console.log("Executed command " + cmd);
+            document.getElementById("message").value = newMessageValue;
+            newMessageValue = cmd;
+        }
+
+        if (newMessageValue.slice(0, 5) === ".help") {
+            newMessageValue = newMessageValue.slice(7)
+            if (newMessageValue.slice(0, 3) === "rep") {
+                console.log("=== HELP ===\n rep [on|off]: Replace input text in some way.");
+            }
+            else if (newMessageValue.slice(0, 3) === "rev") {
+                console.log("=== HELP ===\n rev <message>: Reverse the message.");
+            }
+            else if (newMessageValue.slice(0, 4) === "half") {
+                console.log("=== HELP ===\n half <message>: Send a character of the message every 2 characters.");
+            }
+            else if (newMessageValue.slice(0, 9) === "PFLFstart") {
+                console.log("=== HELP ===\n PFLFstart: Start a PFLF game.");
+            }
+            else if (newMessageValue.slice(0, 7) === "PFLFend") {
+                console.log("=== HELP ===\n PFLFend: End the current PFLF game.");
+            }
+            else if (newMessageValue.slice(0, 7) === "getPFLF") {
+                console.log("=== HELP ===\n getPFLF: Acquire the current state of the PFLF game.");
+            }
+            else if (newMessageValue.slice(0, 5) === "claim") {
+                console.log("=== HELP ===\n claim <number>: Claim a number in the PFLF game.");
+            }
+            else if (newMessageValue.slice(0, 7) === "PFLFset") {
+                console.log("=== HELP ===\n PFLFset [limit8|limit9] [roll3|roll4]: Set the current state of the PFLF game.");
+            }
+            else if (newMessageValue.slice(0, 9) === "1A2Bstart") {
+                console.log("=== HELP ===\n 1A2Bstart: Start an 1A2B game.");
+            }
+            else if (newMessageValue.slice(0, 7) === "1A2Bend") {
+                console.log("=== HELP ===\n 1A2Bend: End the current 1A2B game.");
+            }
+            else if (newMessageValue.slice(0, 9) === "randguess") {
+                console.log("=== HELP ===\n randguess: Guess a random number in 1A2B game.");
+            }
+            else if (newMessageValue.slice(0, 5) === "guess") {
+                console.log("=== HELP ===\n guess <number>: Guess a number in 1A2B game.");
+            }
+            else if (newMessageValue.slice(0, 4) === "send") {
+                console.log("=== HELP ===\n send: Toggle send message on.");
+            }
+            else if (newMessageValue.slice(0, 6) === "unsend") {
+                console.log("=== HELP ===\n unsend: Toggle send message off.");
+            }
+            else if (newMessageValue.slice(0, 5) === "craft") {
+                console.log("=== HELP ===\n craft: Craft all cards.");
+            }
+            else if (newMessageValue.slice(0, 6) === "scraft") {
+                console.log("=== HELP ===\n scraft <ID>.<rarity(number)>: Craft a certain rarity of a certain card.");
+            }
+            else if (newMessageValue.slice(0, 8) === "craftadd") {
+                console.log("=== HELP ===\n craftadd <rarity(string)> <attempt> <success> <total>: Manually add to the recorded crafting data.");
+            }
+            else if (newMessageValue.slice(0, 8) === "endcraft") {
+                console.log("=== HELP ===\n endcraft: End all craft that is going on.");
+            }
+            else if (newMessageValue.slice(0, 10) === "craftstate") {
+                console.log("=== HELP ===\n craftstate: Show all recorded crafting data.");
+                console.log("=== HELP ===\n craftstate <rarity(number)>: Show recorded crafting data of a certain rarity.");
+            }
+            else if (newMessageValue.slice(0, 10) === "craftclear") {
+                console.log("=== HELP ===\n craftclear: Clear all recorded crafting data.");
+            }
+            else if (newMessageValue.slice(0, 4) === "dice") {
+                console.log("=== HELP ===\n dice: Start dicing.");
+            }
+            else if (newMessageValue.slice(0, 5) === "sdice") {
+                console.log("=== HELP ===\n sdice 33.<rarity(number)>: Dice a dice of a single rarity.");
+            }
+            else if (newMessageValue.slice(0, 7) === "diceadd") {
+                console.log("=== HELP ===\n diceadd <result(number)> <count>: Manually add to the dicing data. When result is 4, this command only adds to the total dicer amount.");
+            }
+            else if (newMessageValue.slice(0, 7) === "enddice") {
+                console.log("=== HELP ===\n enddice: Stop dicing.");
+            }
+            else if (newMessageValue.slice(0, 9) === "dicestate") {
+                console.log("=== HELP ===\n dicestate: Show all recorded dicing data.");
+            }
+            else if (newMessageValue.slice(0, 9) === "diceclear") {
+                console.log("=== HELP ===\n diceclear: Clear all recorded dicing data.");
+            }
+            else if (newMessageValue.slice(0, 7) === "execute") {
+                console.log("=== HELP ===\n execute <count>?: Execute the last <count> message as command. Defaults to 1.");
+            }
+            else {
+                console.log("=== HELP ===\n help <command>: Show help for commands.");
+            }
+        }
+
         //使用方法：.rep on或者.rep off，可以替换一些输入的文本
         if (newMessageValue.slice(0, 5) === ".rep ") {
             newMessageValue = newMessageValue.slice(6)
@@ -719,6 +830,7 @@
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
+
         //使用方法：.craft，根据设定的规则自动合成
         if (newMessageValue === ".craft") {
             allCraft()
@@ -852,6 +964,7 @@
             document.getElementById("message").value = newMessageValue
         }
         //使用方法：.diceadd 500 10可以加入10次x500数量，.diceadd 4 20可以加入20次dicer总次数
+        //AE对这里的解释：.diceadd 4 20只会增加总次数而不会增加任何一种结果的次数，因为4不是任何一种dicer的结果
         if (newMessageValue.slice(0, 9) === ".diceadd ") {
             newMessageValue = newMessageValue.slice(10)
             let testAdd1 = newMessageValue.match(/^\d+/), testAdd2 = newMessageValue.match(/(?<=\s)\d+/)
@@ -901,7 +1014,7 @@
             document.getElementById("message").value = newMessageValue
         }
         if (newMessageValue[0] === ".") {
-            console.log("Command does not exist!")
+            console.log("\"" + newMessageValue + "\" Command does not exist!")
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
