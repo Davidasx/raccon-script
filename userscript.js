@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      2025-04-15
 // @description  not an AD reference
-// @author       6361
+// @author       6361 VS ARCANAEDEN
 // @match        *://ruarua.ru/*
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -104,7 +104,7 @@
         }
     }
     const msg_send = {
-        _value: GM_getValue("msg_send", true),
+        _value: 0 + GM_getValue("msg_send", 1),
         get value() {
             return this._value
         },
@@ -284,14 +284,14 @@
     //默认值：x10及以上就停止
     async function allDice() {
         if (unsafeWindow.location.pathname.startsWith("/e/npc") === false && unsafeWindow.location.pathname.startsWith("/npc") === false) {
-            console.log("Not dicing!")
+            newlog("Not dicing!")
             return
         }
         if (/33/.test(document.getElementById("1").value) === false) {
-            console.log("Not dicing!")
+            newlog("Not dicing!")
             return
         }
-        console.log("Dicing...")
+        newlog("Dicing...")
         goDice = true
         let canDice = true
         while (goDice && canDice) {
@@ -320,18 +320,18 @@
                 }
             }
         }
-        console.log("Dice ended")
+        newlog("Dice ended")
     }
     async function singleDice(value) {
         if (unsafeWindow.location.pathname.startsWith("/e/npc") === false && unsafeWindow.location.pathname.startsWith("/npc") === false) {
-            console.log("Not dicing!")
+            newlog("Not dicing!")
             return
         }
         if (/33/.test(document.getElementById("1").value) === false) {
-            console.log("Not dicing!")
+            newlog("Not dicing!")
             return
         }
-        console.log("Dicing single dice...")
+        newlog("Dicing single dice...")
         for (let i = document.getElementsByName("cardchoose").length - 1; i >= 0; i--) {
             if (document.getElementsByName("cardchoose")[i].value === value) {
                 document.getElementsByName("cardchoose")[i].checked = 1
@@ -351,15 +351,15 @@
                 }
             }
         }
-        console.log("Dice ended")
+        newlog("Dice ended")
     }
     let goCraft = false
     async function allCraft() {
         if (unsafeWindow.location.pathname.startsWith("/e/craftcard") === false && unsafeWindow.location.pathname.startsWith("/craftcard") === false) {
-            console.log("Not crafting!")
+            newlog("Not crafting!")
             return
         }
-        console.log("Crafting...")
+        newlog("Crafting...")
         goCraft = true
         let canCraft = true
         while (goCraft && canCraft) {
@@ -405,14 +405,14 @@
                 }
             }
         }
-        console.log("Craft ended")
+        newlog("Craft ended")
     }
     async function singleCraft(value) {
         if (unsafeWindow.location.pathname.startsWith("/e/craftcard") === false && unsafeWindow.location.pathname.startsWith("/craftcard") === false) {
-            console.log("Not crafting!")
+            newlog("Not crafting!")
             return
         }
-        console.log("Crafting single card...")
+        newlog("Crafting single card...")
         for (let i = document.getElementsByName("cardchoose").length - 1; i >= 0; i--) {
             if (document.getElementsByName("cardchoose")[i].value === value && parseInt(document.getElementsByName("cardchoose")[i].labels[0].innerText.match(/\d+/)[0], 10) >= 5) {
                 let pendingRarity = parseInt(document.getElementsByName("cardchoose")[i].value.match(/(?<=\.)\d+/)[0], 10)
@@ -452,13 +452,126 @@
                 craftAtt.value = testArray
             }
         }
-        console.log("Craft ended")
+        newlog("Craft ended")
     }
+
+    const CommandList = [
+        "rep",
+        "rev",
+        "half",
+        "PFLFstart",
+        "PFLFend",
+        "getPFLF",
+        "claim",
+        "PFLFset",
+        "1A2Bstart",
+        "1A2Bend",
+        "randguess",
+        "guess",
+        "send",
+        "unsend",
+        "to",
+        "craft",
+        "scraft",
+        "endcraft",
+        "craftadd",
+        "craftstate",
+        "craftclear",
+        "dice",
+        "sdice",
+        "diceadd",
+        "enddice",
+        "dicestate",
+        "diceclear",
+        "execute"
+    ];
+
     const oldSend = unsafeWindow.send
+    const AppendToChat = function () {
+        if (document.getElementById("message").value.trim() === "") return;
+        const messageValue = "[SCRIPT] " + document.getElementById("message").value;
+        let board = document.getElementById("board");
+        let newMessageContainer = document.createElement("div");
+        newMessageContainer.style.color = "7c78cc";
+        let newMessage = document.createElement("b");
+        newMessage.innerText = messageValue;
+        newMessageContainer.appendChild(newMessage);
+        board.appendChild(newMessageContainer);
+        board.scrollTo(0, board.scrollHeight);
+    }
+    const newlog = function (GivenString) {
+        if (msg_send.value === 2) {
+            document.getElementById("message").value = GivenString;
+            AppendToChat();
+        }
+        else console.log(GivenString);
+    }
+    function findClosestString(input, stringList) {
+        if (!stringList.length) return null;
+
+        const isPermutation = (a, b) => {
+            if (a.length !== b.length) return false;
+            const aSorted = [...a.toLowerCase()].sort().join('');
+            const bSorted = [...b.toLowerCase()].sort().join('');
+            return aSorted === bSorted;
+        };
+
+        const permutations = stringList.filter(str => isPermutation(input, str));
+        if (permutations.length > 0) {
+            return permutations[0];
+        }
+
+        const modifiedLevenshtein = (a, b) => {
+            const aLower = a.toLowerCase();
+            const bLower = b.toLowerCase();
+
+            if (!aLower.length) return bLower.length * 0.5;
+            if (!bLower.length) return aLower.length * 0.5;
+
+            const matrix = [];
+            for (let i = 0; i <= bLower.length; i++) {
+                matrix[i] = [i * 0.5];
+            }
+            for (let j = 0; j <= aLower.length; j++) {
+                matrix[0][j] = j * 0.5;
+            }
+
+            for (let i = 1; i <= bLower.length; i++) {
+                for (let j = 1; j <= aLower.length; j++) {
+                    const substitutionCost = aLower[j - 1] === bLower[i - 1] ? 0 : 1;
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j] + 0.5,
+                        matrix[i][j - 1] + 0.5,
+                        matrix[i - 1][j - 1] + substitutionCost
+                    );
+                }
+            }
+
+            return matrix[bLower.length][aLower.length];
+        };
+
+        // Find string with minimum distance
+        let minDistance = Infinity;
+        let closestString = null;
+
+        for (const str of stringList) {
+            const distance = modifiedLevenshtein(input, str);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestString = str;
+            }
+        }
+
+        return closestString;
+    }
+
     unsafeWindow.send = function () {
         const messageValue = document.getElementById("message").value
         let newMessageValue = messageValue
         newMessageValue = newMessageValue.replaceAll(/(?<!\s)(?!\s{2}\S)\s+/g, "  ")
+
+        let isCommand = newMessageValue.slice(0, 1) === ".";
+        console.log(isCommand);
 
         //最高权限
         if (newMessageValue === ".execute") {
@@ -481,104 +594,113 @@
             newMessageValue = cmd;
         }
 
+
         if (newMessageValue.slice(0, 5) === ".help") {
             newMessageValue = newMessageValue.slice(7)
             if (newMessageValue.slice(0, 3) === "rep") {
-                console.log("=== HELP ===\n rep [on|off]: Replace input text in some way.");
+                newlog("=== HELP ===\n rep [on|off]: Replace input text in some way.");
             }
             else if (newMessageValue.slice(0, 3) === "rev") {
-                console.log("=== HELP ===\n rev <message>: Reverse the message.");
+                newlog("=== HELP ===\n rev <message>: Reverse the message.");
             }
             else if (newMessageValue.slice(0, 4) === "half") {
-                console.log("=== HELP ===\n half <message>: Send a character of the message every 2 characters.");
+                newlog("=== HELP ===\n half <message>: Send a character of the message every 2 characters.");
             }
             else if (newMessageValue.slice(0, 9) === "PFLFstart") {
-                console.log("=== HELP ===\n PFLFstart: Start a PFLF game.");
+                newlog("=== HELP ===\n PFLFstart: Start a PFLF game.");
             }
             else if (newMessageValue.slice(0, 7) === "PFLFend") {
-                console.log("=== HELP ===\n PFLFend: End the current PFLF game.");
+                newlog("=== HELP ===\n PFLFend: End the current PFLF game.");
             }
             else if (newMessageValue.slice(0, 7) === "getPFLF") {
-                console.log("=== HELP ===\n getPFLF: Acquire the current state of the PFLF game.");
+                newlog("=== HELP ===\n getPFLF: Acquire the current state of the PFLF game.");
             }
             else if (newMessageValue.slice(0, 5) === "claim") {
-                console.log("=== HELP ===\n claim <number>: Claim a number in the PFLF game.");
+                newlog("=== HELP ===\n claim <number>: Claim a number in the PFLF game.");
             }
             else if (newMessageValue.slice(0, 7) === "PFLFset") {
-                console.log("=== HELP ===\n PFLFset [limit8|limit9] [roll3|roll4]: Set the current state of the PFLF game.");
+                newlog("=== HELP ===\n PFLFset [limit8|limit9] [roll3|roll4]: Set the current state of the PFLF game.");
             }
             else if (newMessageValue.slice(0, 9) === "1A2Bstart") {
-                console.log("=== HELP ===\n 1A2Bstart: Start an 1A2B game.");
+                newlog("=== HELP ===\n 1A2Bstart: Start an 1A2B game.");
             }
             else if (newMessageValue.slice(0, 7) === "1A2Bend") {
-                console.log("=== HELP ===\n 1A2Bend: End the current 1A2B game.");
+                newlog("=== HELP ===\n 1A2Bend: End the current 1A2B game.");
             }
             else if (newMessageValue.slice(0, 9) === "randguess") {
-                console.log("=== HELP ===\n randguess: Guess a random number in 1A2B game.");
+                newlog("=== HELP ===\n randguess: Guess a random number in 1A2B game.");
             }
             else if (newMessageValue.slice(0, 5) === "guess") {
-                console.log("=== HELP ===\n guess <number>: Guess a number in 1A2B game.");
+                newlog("=== HELP ===\n guess <number>: Guess a number in 1A2B game.");
             }
             else if (newMessageValue.slice(0, 4) === "send") {
-                console.log("=== HELP ===\n send: Toggle send message on.");
+                newlog("=== HELP ===\n send: Toggle send message on.");
             }
             else if (newMessageValue.slice(0, 6) === "unsend") {
-                console.log("=== HELP ===\n unsend: Toggle send message off.");
+                newlog("=== HELP ===\n unsend: Toggle send message off.");
             }
             else if (newMessageValue.slice(0, 5) === "craft") {
-                console.log("=== HELP ===\n craft: Craft all cards.");
+                newlog("=== HELP ===\n craft: Craft all cards.");
             }
             else if (newMessageValue.slice(0, 6) === "scraft") {
-                console.log("=== HELP ===\n scraft <ID>.<rarity(number)>: Craft a certain rarity of a certain card.");
+                newlog("=== HELP ===\n scraft <ID>.<rarity(number)>: Craft a certain rarity of a certain card.");
             }
             else if (newMessageValue.slice(0, 8) === "craftadd") {
-                console.log("=== HELP ===\n craftadd <rarity(string)> <attempt> <success> <total>: Manually add to the recorded crafting data.");
+                newlog("=== HELP ===\n craftadd <rarity(string)> <attempt> <success> <total>: Manually add to the recorded crafting data.");
             }
             else if (newMessageValue.slice(0, 8) === "endcraft") {
-                console.log("=== HELP ===\n endcraft: End all craft that is going on.");
+                newlog("=== HELP ===\n endcraft: End all craft that is going on.");
             }
             else if (newMessageValue.slice(0, 10) === "craftstate") {
-                console.log("=== HELP ===\n craftstate: Show all recorded crafting data.");
-                console.log("=== HELP ===\n craftstate <rarity(number)>: Show recorded crafting data of a certain rarity.");
+                newlog("=== HELP ===\n craftstate <rarity(number)>?: Show recorded crafting data of a certain rarity.");
             }
             else if (newMessageValue.slice(0, 10) === "craftclear") {
-                console.log("=== HELP ===\n craftclear: Clear all recorded crafting data.");
+                newlog("=== HELP ===\n craftclear: Clear all recorded crafting data.");
             }
             else if (newMessageValue.slice(0, 4) === "dice") {
-                console.log("=== HELP ===\n dice: Start dicing.");
+                newlog("=== HELP ===\n dice: Start dicing.");
             }
             else if (newMessageValue.slice(0, 5) === "sdice") {
-                console.log("=== HELP ===\n sdice 33.<rarity(number)>: Dice a dice of a single rarity.");
+                newlog("=== HELP ===\n sdice 33.<rarity(number)>: Dice a dice of a single rarity.");
             }
             else if (newMessageValue.slice(0, 7) === "diceadd") {
-                console.log("=== HELP ===\n diceadd <result(number)> <count>: Manually add to the dicing data. When result is 4, this command only adds to the total dicer amount.");
+                newlog("=== HELP ===\n diceadd <result(number)> <count>: Manually add to the dicing data. When result is 4, this command only adds to the total dicer amount.");
             }
             else if (newMessageValue.slice(0, 7) === "enddice") {
-                console.log("=== HELP ===\n enddice: Stop dicing.");
+                newlog("=== HELP ===\n enddice: Stop dicing.");
             }
             else if (newMessageValue.slice(0, 9) === "dicestate") {
-                console.log("=== HELP ===\n dicestate: Show all recorded dicing data.");
+                newlog("=== HELP ===\n dicestate: Show all recorded dicing data.");
             }
             else if (newMessageValue.slice(0, 9) === "diceclear") {
-                console.log("=== HELP ===\n diceclear: Clear all recorded dicing data.");
+                newlog("=== HELP ===\n diceclear: Clear all recorded dicing data.");
             }
             else if (newMessageValue.slice(0, 7) === "execute") {
-                console.log("=== HELP ===\n execute <count>?: Execute the last <count> message as command. Defaults to 1.");
+                newlog("=== HELP ===\n execute <count>?: Execute the last <count> message as command. Defaults to 1.");
+            }
+            else if (newMessageValue.slice(0, 2) === "to") {
+                newlog("=== HELP ===\n to <method|number>: Change the way messages are displayed.");
+            }
+            else if (newMessageValue.trim() === "") {
+                newlog("=== HELP ===\n help <command>: Show help for commands.");
             }
             else {
-                console.log("=== HELP ===\n help <command>: Show help for commands.");
+                let ClosestCommand = findClosestString(newMessageValue, CommandList);
+                newlog("Command not found. Did you mean " + ClosestCommand + "?");
             }
+
+            newMessageValue = ""
         }
 
         //使用方法：.rep on或者.rep off，可以替换一些输入的文本
         if (newMessageValue.slice(0, 5) === ".rep ") {
             newMessageValue = newMessageValue.slice(6)
             if (newMessageValue.slice(0, 2) === "on") {
-                console.log("Replace is on")
+                newlog("Replace is on")
                 com_rep.value = true
             }
             if (newMessageValue.slice(0, 3) === "off") {
-                console.log("Replace is off")
+                newlog("Replace is off")
                 com_rep.value = false
             }
             newMessageValue = ""
@@ -609,10 +731,10 @@
         //使用方法：.PFLFstart，可以开启PFLF
         if (newMessageValue === ".PFLFstart") {
             if (PFLFstart.value === true) {
-                console.log("Already started PFLF!")
+                newlog("Already started PFLF!")
                 newMessageValue = ""
             } else {
-                console.log("PFLF started!")
+                newlog("PFLF started!")
                 PFLFstart.value = true
                 PFLFturn.value = 0
                 PFLFscore.value = -1
@@ -626,9 +748,9 @@
         //使用方法：.PFLFend，可以结束PFLF
         if (newMessageValue === ".PFLFend") {
             if (PFLFstart.value === false) {
-                console.log("PFLF is not started!")
+                newlog("PFLF is not started!")
             } else {
-                console.log("PFLF ended!")
+                newlog("PFLF ended!")
                 PFLFstart.value = false
             }
             newMessageValue = ""
@@ -636,7 +758,7 @@
         }
         if (newMessageValue === ".getPFLF") {
             if (PFLFstart.value === false) {
-                console.log("PFLF is not started!")
+                newlog("PFLF is not started!")
                 newMessageValue = ""
             } else {
                 newMessageValue = "Turn: " + PFLFturn.value + ", Score: " + PFLFscore.value + ", Clear: " + PFLFclear.value + ", Dice: " + PFLFdice.value
@@ -647,7 +769,7 @@
         if (newMessageValue.slice(0, 7) === ".claim ") {
             newMessageValue = newMessageValue.slice(8)
             if (PFLFstart.value === false) {
-                console.log("PFLF is not started!")
+                newlog("PFLF is not started!")
                 newMessageValue = ""
             } else {
                 let testValid = true, claimNum = newMessageValue.match(/^\d+/)
@@ -697,7 +819,7 @@
                         newMessageValue = "Turn: " + PFLFturn.value + ", Score: " + PFLFscore.value + ", Clear: " + PFLFclear.value + ", Dice: " + PFLFdice.value
                     }
                 } else {
-                    console.log("Error! Can not claim the number")
+                    newlog("Error! Can not claim the number")
                     newMessageValue = ""
                 }
             }
@@ -707,19 +829,19 @@
         if (newMessageValue.slice(0, 9) === ".PFLFset ") {
             newMessageValue = newMessageValue.slice(10)
             if (newMessageValue.slice(0, 6) === "limit8") {
-                console.log("Limit is set to 8")
+                newlog("Limit is set to 8")
                 PFLFlimit.value = 8
             }
             if (newMessageValue.slice(0, 6) === "limit9") {
-                console.log("Limit is set to 9")
+                newlog("Limit is set to 9")
                 PFLFlimit.value = 9
             }
             if (newMessageValue.slice(0, 5) === "roll3") {
-                console.log("Roll is set to 3")
+                newlog("Roll is set to 3")
                 PFLFroll.value = 3
             }
             if (newMessageValue.slice(0, 5) === "roll4") {
-                console.log("Roll is set to 4")
+                newlog("Roll is set to 4")
                 PFLFroll.value = 4
             }
             newMessageValue = ""
@@ -728,10 +850,10 @@
         //使用方法：.1A2Bstart，可以开启1A2B
         if (newMessageValue === ".1A2Bstart") {
             if (check1A2B(Num1A2B.value) === true) {
-                console.log("Already started 1A2B!")
+                newlog("Already started 1A2B!")
                 newMessageValue = ""
             } else {
-                console.log("Generating 1A2B number...")
+                newlog("Generating 1A2B number...")
                 while (check1A2B(Num1A2B.value) === false) {
                     Num1A2B.value = Math.floor(Math.random() * 10000)
                 }
@@ -742,9 +864,9 @@
         //使用方法：.1A2Bend，可以结束1A2B
         if (newMessageValue === ".1A2Bend") {
             if (check1A2B(Num1A2B.value) === false) {
-                console.log("1A2B is not started!")
+                newlog("1A2B is not started!")
             } else {
-                console.log("1A2B ended! The number is " + Num1A2B.value)
+                newlog("1A2B ended! The number is " + Num1A2B.value)
                 Num1A2B.value = 0
             }
             newMessageValue = ""
@@ -763,7 +885,7 @@
         if (newMessageValue.slice(0, 7) === ".guess ") {
             newMessageValue = newMessageValue.slice(8)
             if (check1A2B(Num1A2B.value) === false) {
-                console.log("1A2B is not started!")
+                newlog("1A2B is not started!")
                 newMessageValue = ""
             } else {
                 let testValid = true, guessNum = newMessageValue.match(/^\d+/)
@@ -810,25 +932,50 @@
                     }
                 }
                 if (testValid === false) {
-                    console.log("Invalid guess!")
+                    newlog("Invalid guess!")
                     newMessageValue = ""
                 }
             }
             document.getElementById("message").value = newMessageValue
         }
+
+        /* ------- DEPRECATED ------- */
         //使用方法：.send，开启消息发送（这条消息不会被发送）
         if (newMessageValue === ".send") {
-            console.log("Send message is activated!")
-            msg_send.value = true
+            newlog("Send message is activated!")
+            msg_send.value = 1
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
         //使用方法：.unsend，关闭消息发送
         if (newMessageValue === ".unsend") {
-            console.log("Send message is inactivated!")
-            msg_send.value = false
+            newlog("Send message is inactivated!")
+            msg_send.value = 0
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
+        }
+
+        //使用方法：.to <method|number>，调整消息发送方式，是 .send 和 .unsend 的上位替代
+        if (newMessageValue.slice(0, 4) === ".to ") {
+            newMessageValue = newMessageValue.slice(5);
+            if (newMessageValue === "public" || newMessageValue === "1") {
+                newlog("Message will be sent to public chat!")
+                msg_send.value = 1
+                newMessageValue = ""
+                document.getElementById("message").value = newMessageValue
+            }
+            else if (newMessageValue === "private" || newMessageValue === "2") {
+                newlog("Message will be displayed privately!")
+                msg_send.value = 2
+                newMessageValue = ""
+                document.getElementById("message").value = newMessageValue
+            }
+            else if (newMessageValue === "console" || newMessageValue === "0") {
+                newlog("Message will be displayed only in console!")
+                msg_send.value = 0
+                newMessageValue = ""
+                document.getElementById("message").value = newMessageValue
+            }
         }
 
         //使用方法：.craft，根据设定的规则自动合成
@@ -849,10 +996,10 @@
             newMessageValue = newMessageValue.slice(11)
             let testAdd1 = newMessageValue.match(/^[A-Za-z]+/), testAdd2 = newMessageValue.match(/(?<=\s)\d+/g)
             if (testAdd1 === null || testAdd2 === null) {
-                console.log("Invalid parameter!")
+                newlog("Invalid parameter!")
                 newMessageValue = ""
             } else {
-                console.log("Craft state modified!")
+                newlog("Craft state modified!")
                 let testArray = craftAtt.value
                 let checkValue = testArray[craftConvert(testAdd1[0])][parseInt(testAdd2[0], 10)]
                 testArray[craftConvert(testAdd1[0])][parseInt(testAdd2[0], 10)] = "" + (parseInt(checkValue.match(/^\d+/)[0], 10) + parseInt(testAdd2[1], 10)) + "/" + (parseInt(checkValue.match(/(?<=\/)\d+/)[0], 10) + parseInt(testAdd2[2], 10))
@@ -863,7 +1010,7 @@
         }
         //使用方法：.endcraft，结束正在进行的craft
         if (newMessageValue === ".endcraft") {
-            console.log("Ending craft...")
+            newlog("Ending craft...")
             goCraft = false
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
@@ -908,7 +1055,7 @@
                 testRarity = parseInt(testRarity, 10)
             }
             if (testRarity === null || testRarity < 1 || testRarity > 6) {
-                console.log("Invalid parameter!")
+                newlog("Invalid parameter!")
             } else {
                 let testArray = craftAtt.value
                 let testStr = "Rarity: " + convertCraft(testRarity)
@@ -946,7 +1093,7 @@
                 }
             }
             craftAtt.value = testArray
-            console.log("Cleared craft result!")
+            newlog("Cleared craft result!")
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
@@ -969,10 +1116,10 @@
             newMessageValue = newMessageValue.slice(10)
             let testAdd1 = newMessageValue.match(/^\d+/), testAdd2 = newMessageValue.match(/(?<=\s)\d+/)
             if (testAdd1 === null || testAdd2 === null) {
-                console.log("Invalid parameter!")
+                newlog("Invalid parameter!")
                 newMessageValue = ""
             } else {
-                console.log("Dicer state modified!")
+                newlog("Dicer state modified!")
                 let testArray = dicerResult.value
                 testArray[dicerConvert(parseInt(testAdd1[0], 10))] += parseInt(testAdd2[0], 10)
                 dicerResult.value = testArray
@@ -982,7 +1129,7 @@
         }
         //使用方法：.dice，结束正在进行的dicer
         if (newMessageValue === ".enddice") {
-            console.log("Ending dice...")
+            newlog("Ending dice...")
             goDice = false
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
@@ -1009,12 +1156,13 @@
                 testArray[i] = 0
             }
             dicerResult.value = testArray
-            console.log("Cleared dicer result!")
+            newlog("Cleared dicer result!")
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
         if (newMessageValue[0] === ".") {
-            console.log("\"" + newMessageValue + "\" Command does not exist!")
+            let ClosestCommand = findClosestString(newMessageValue.slice(1).split(' ')[0], CommandList);
+            newlog("Command " + newMessageValue.split(' ')[0] + " not found. Did you mean " + ClosestCommand + "?");
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
@@ -1111,10 +1259,57 @@
             }
             console.log(messageBlock)
             document.getElementById("message").value = messageBlock
-            if (msg_send.value === true) {
+            if (msg_send.value === 1 || !isCommand) {
                 oldSend()
             }
+            else if (msg_send.value === 2) {
+                AppendToChat()
+            }
         }
+    }
+
+
+    /* --------- ADDED BY ARCANAEDEN --------- */
+
+    let messageHistory = [];
+    let currentIndex = -1;
+    function saveMessage(message) {
+        if (message) {
+            if (messageHistory[messageHistory.length - 1] !== message) messageHistory.push(message);
+            currentIndex = messageHistory.length;
+        }
+    }
+
+    function handleKeyDown(event) {
+        const inputField = document.getElementById('message');
+        if (!inputField) return;
+        if (event.key === 'ArrowUp') {
+            if (currentIndex > 0) {
+                currentIndex--;
+                inputField.value = messageHistory[currentIndex];
+            }
+        } else if (event.key === 'ArrowDown') {
+            if (currentIndex < messageHistory.length - 1) {
+                currentIndex++;
+                inputField.value = messageHistory[currentIndex];
+            }
+            else currentIndex = messageHistory.length;
+        } else if (event.key === 'Enter') {
+            const message = inputField.value.trim();
+            saveMessage(message);
+            const sendButton = Array.from(document.querySelectorAll('a')).find(btn => btn.innerText === 'Send');
+            if (sendButton) sendButton.click();
+            else console.error('Send button not found');
+            inputField.value = '';
+        }
+    }
+    function handleInputChange() {
+        currentIndex = messageHistory.length;
+    }
+    const inputField = document.getElementById('message');
+    if (inputField) {
+        inputField.addEventListener('keydown', handleKeyDown);
+        inputField.addEventListener('input', handleInputChange);
     }
 
 })()
