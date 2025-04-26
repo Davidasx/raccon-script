@@ -113,6 +113,29 @@
             GM_setValue("msg_send", newVal)
         }
     }
+
+    // 不要乱动这里！！！
+    // 使用方法：
+    // let a = data_obj.value.color
+    // let a = data_obj.value['color']
+    // data_obj = ['color', '6cf'] //这条直接使用赋值符号！
+    const data_obj = {
+        _value: GM_getValue("data_obj", {}),
+        get value() {
+            return {...this._value}
+        },
+        set value(newVal) {
+            if (!Array.isArray(newVal) || newVal.length !== 2) {
+                throw new Error("Expected [key, value] array");
+            }
+            this._value[newVal[0]] = newVal[1]
+            GM_setValue("data_obj", this._value)
+        },
+        delete(key) {
+            delete this._value[key];
+            GM_setValue("data_obj", this._value);
+        }
+    }
     function dicerConvert(num) {
         if (num <= 5) {
             return num
@@ -483,16 +506,26 @@
         "enddice",
         "dicestate",
         "diceclear",
-        "execute"
+        "execute",
+        "idle",
+        "color"
     ];
+
+    const GameList = {
+        //不要改大小写！！！
+        'ad': "https://ivark.github.io/AntimatterDimensions/",
+        'synergism': "https://synergism.cc/",
+    };
 
     const oldSend = unsafeWindow.send
     const AppendToChat = function () {
         if (document.getElementById("message").value.trim() === "") return;
+
+        const msg_color = data_obj.value["color"];
         const messageValue = "[SCRIPT] " + document.getElementById("message").value;
         let board = document.getElementById("board");
         let newMessageContainer = document.createElement("div");
-        newMessageContainer.style.color = "7c78cc";
+        newMessageContainer.style.color = msg_color ? msg_color : "7c78cc";
         let newMessage = document.createElement("b");
         newMessage.innerText = messageValue;
         newMessageContainer.appendChild(newMessage);
@@ -564,6 +597,8 @@
 
         return closestString;
     }
+
+    let previousGame = "";
 
     unsafeWindow.send = function () {
         const messageValue = document.getElementById("message").value
@@ -680,6 +715,12 @@
             }
             else if (newMessageValue.slice(0, 2) === "to") {
                 newlog("=== HELP ===\n to <method|number>: Change the way messages are displayed.");
+            }
+            else if (newMessageValue.slice(0, 4) === "idle") {
+                newlog("=== HELP ===\n idle [on|open|off|hidden] <game>?: Open an idle game. Only one can be opened at a time.");
+            }
+            else if (newMessageValue.slice(0, 5) === "color") {
+                newlog("=== HELP ===\n color [color|default]: Change the script display color.");
             }
             else if (newMessageValue.trim() === "") {
                 newlog("=== HELP ===\n help <command>: Show help for commands.");
@@ -978,6 +1019,22 @@
             }
         }
 
+        if(newMessageValue.slice(0, 7) === ".color ") {
+            newMessageValue = newMessageValue.slice(8);
+            function isValidColor(colorStr) {
+                if (!colorStr || typeof colorStr !== 'string') return false;
+                const tester = document.createElement('div');
+                tester.style.color = 'transparent';
+                tester.style.color = colorStr;
+                return tester.style.color !== 'transparent';
+            }
+            if(newMessageValue === "default") data_obj.value = ["color", "7c78cc"];
+            else if(isValidColor(newMessageValue)) data_obj.value = ["color", newMessageValue];
+            else newlog("Invalid Color!");
+            newMessageValue = ""
+            document.getElementById("message").value = newMessageValue
+        }
+
         //使用方法：.craft，根据设定的规则自动合成
         if (newMessageValue === ".craft") {
             allCraft()
@@ -1157,6 +1214,47 @@
             }
             dicerResult.value = testArray
             newlog("Cleared dicer result!")
+            newMessageValue = ""
+            document.getElementById("message").value = newMessageValue
+        }
+        if (newMessageValue.slice(0, 6) === ".idle ") {
+            function OpenGame(game) {
+                const ADWindow = document.createElement("iframe");
+                ADWindow.src = GameList[game];
+                ADWindow.style.height = "100%";
+                ADWindow.style.width = "100%";
+                ADWindow.style.zIndex = "1958";
+                ADWindow.style.position = "fixed";
+                ADWindow.style.top = "0px";
+                ADWindow.style.left = "0px";
+                ADWindow.id = "ADtag";
+                document.body.appendChild(ADWindow);
+                document.getElementById("board").style.zIndex = 1959;
+                document.getElementById("message").parentElement.style.zIndex = 1959;
+                previousGame = game
+            }
+            newMessageValue = newMessageValue.slice(7);
+            if (newMessageValue.slice(0, 2) === "on" || newMessageValue.slice(0, 4) === "open") {
+                const game = newMessageValue.split(' ')[2].toLowerCase();
+                let target = document.getElementById("ADtag");
+                if (GameList[game] && previousGame !== game) OpenGame(game);
+                else if (target && target.style.display == "none") target.style.display = "block";
+                else if (!GameList[game]) newlog("Game " + game + " does not exist!");
+                else if (!target) OpenGame(game);
+                else newlog("Game is already opened!");
+            }
+            else if (newMessageValue === "off") {
+                const ADWindow = document.getElementById("ADtag");
+                if (ADWindow) document.getElementById("ADtag").remove();
+                else newlog("Game is not open!");
+            }
+            else if (newMessageValue === "hidden") {
+                const ADWindow = document.getElementById("ADtag");
+                if (ADWindow) document.getElementById("ADtag").style.display = "none";
+                else newlog("Game is not open!");
+            }
+            else newlog("Invalid Command!");
+
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
