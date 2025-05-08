@@ -315,13 +315,13 @@
         if (mob === "Kitten" || mob === "Angel") {
             return 0.5
         }
-        if (mob === "Rooster") {
+        if (mob === "Rooster" || mob === "Printer") {
             return 1
         }
         if (mob === "Fish" || mob === "Shopkeeper") {
             return 1.2
         }
-        if (mob === "Soldier Ant" || mob === "Printer") {
+        if (mob === "Soldier Ant") {
             return 1.5
         }
         if (mob === "Jellyfish" || mob === "Mojo Slime" || mob === "Big Chest") {
