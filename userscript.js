@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CardRecordPROMAX
 // @namespace    http://tampermonkey.net/
-// @version      2025-05-07
+// @version      1.1.0
 // @description  not an AD reference
 // @author       Several People
 // @match        *://ruarua.ru/*
@@ -302,60 +302,61 @@
             GM_setValue("craftAtt", newVal)
         }
     }
+    // 初始内置数据表
+    const defaultMobValues = {
+        "Black Hole": -1,
+        "Ghost": -0.5,
+        "Slime": 0,
+        "Chest": 0,
+        "Kitten": 0.5,
+        "Angel": 0.5,
+        "Rooster": 1,
+        "Printer": 1,
+        "Fish": 1.2,
+        "Shopkeeper": 1.2,
+        "Soldier Ant": 1.5,
+        "Jellyfish": 1.8,
+        "Mojo Slime": 1.8,
+        "Big Chest": 1.8,
+        "Orga": 2,
+        "Goomba": 2,
+        "Leafbug": 2,
+        "Bomber": 2.2,
+        "Shell": 2.2,
+        "Needle": 2.5,
+        "Crab": 2.5,
+        "Spider": 3,
+        "Ladybug": 3.2,
+        "Crystal": 3.5,
+        "Bee": 3.5,
+        "Ethereal Slime": 3.8,
+        "Shiny Slime": 4,
+        "Demon Slime": 4,
+        "Giant Chest": 4,
+        "Unique Ladybug": 5,
+        "Huge Spider": 5,
+        "Inspo Shroom": 5.5
+    };
+
+    // BCorDEF计算
     function mobConvert(mob) {
-        if (mob === "Black Hole") {
-            return -1
-        }
-        if (mob === "Ghost") {
-            return -0.5
-        }
-        if (mob === "Slime" || mob === "Chest") {
-            return 0
-        }
-        if (mob === "Kitten" || mob === "Angel") {
-            return 0.5
-        }
-        if (mob === "Rooster" || mob === "Printer") {
-            return 1
-        }
-        if (mob === "Fish" || mob === "Shopkeeper") {
-            return 1.2
-        }
-        if (mob === "Soldier Ant") {
-            return 1.5
-        }
-        if (mob === "Jellyfish" || mob === "Mojo Slime" || mob === "Big Chest") {
-            return 1.8
-        }
-        if (mob === "Orga" || mob === "Goomba" || mob === "Leafbug") {
-            return 2
-        }
-        if (mob === "Bomber" || mob === "Shell") {
-            return 2.2
-        }
-        if (mob === "Needle" || mob === "Crab") {
-            return 2.5
-        }
-        if (mob === "Spider") {
-            return 3
-        }
-        if (mob === "Crystal" || mob === "Ladybug" || mob === "Bee") {
-            return 3.5
-        }
-        if (mob === "Ethereal Slime") {
-            return 3.8
-        }
-        if (mob === "Shiny Slime" || mob === "Demon Slime" || mob === "Giant Chest") {
-            return 4
-        }
-        if (mob === "Unique Ladybug" || mob === "Huge Spider") {
-            return 5
-        }
-        if (mob === "Inspo Shroom") {
-            return 5.5
-        }
-        return 0
+        const mobValues = GM_getValue("mobValues", defaultMobValues)
+        return mobValues[mob] ?? 0;
     }
+
+    function refreshMobData() {
+        fetch("https://raccon-api.davidx.top/")
+        .then(response => response.json())
+        .then(data => {
+            GM_setValue("mobValues", data)
+            return 0
+        })
+        .catch(err => {
+            console.error("Data refresh error", err)
+            return 1
+        })
+    }
+
     function slotConvert(rar) {
         let converted = rarityConvert(rar)
         if (converted > 2) {
@@ -1172,6 +1173,21 @@
                     newMessageValue = ""
                 }
             }
+            document.getElementById("message").value = newMessageValue
+        }
+        //使用方法：.refresh，刷新怪物数据
+        if (newMessageValue === ".refresh") {
+            let returnValue = refreshMobData()
+            if (returnValue === 0) {
+                document.getElementById("board").innerHTML = document.getElementById("board").innerHTML +
+                    "<div><span style=\"color: #7eef6d\">[SCRIPT] </span><span style=\"color: #7f0000\">Error: Failed to refresh!</span></div>"
+                chatScroll()
+            } else {
+                document.getElementById("board").innerHTML = document.getElementById("board").innerHTML +
+                    "<div><span style=\"color: #7eef6d\">[SCRIPT] </span><span style=\"color: #00ffbf\">Mob data refreshed!</span></div>"
+                chatScroll()
+            }
+            newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
         //使用方法：.send，开启消息发送（这条消息不会被发送）
