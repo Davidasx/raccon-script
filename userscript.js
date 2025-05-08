@@ -496,7 +496,7 @@
                 return "<p>Next Tier: 15%(" + ATKprint(DEF - 53 + 0.00075) + ")"
             }
             if (ATK + 0.00075 < DEF - 40) {
-                return "<p>Next Tier: 25%(" + ATKprint(DEF - 40 + 0.00075) + ")"
+                return "<p>Next Tier: 20%(" + ATKprint(DEF - 40 + 0.00075) + ")"
             }
             return "Next Tier: 0.075%(" + 636.1 + ")"
         } else {
