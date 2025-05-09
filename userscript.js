@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CardRecordPROMAX
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.2.0
 // @description  not an AD reference
 // @author       Several People
 // @match        *://ruarua.ru/*
@@ -12,6 +12,48 @@
 
 (function () {
     'use strict'
+    
+    const LOADING1 = 'https://ruarua.ru/api/pic/gif/loading1.webp';
+
+    // 如果 src 是 loading2.webp 或 loading3.webp，就返回 loading1，否则原样返回
+    function replaceSrc(src) {
+        if (!src) return src;
+        if (src.endsWith('loading2.webp') || src.endsWith('loading3.webp')) {
+            return LOADING1;
+        }
+        return src;
+    }
+
+    // —— 方法一：重写 HTMLImageElement.prototype.src —— //
+    const imgProto = HTMLImageElement.prototype;
+    const originalSrcDesc = Object.getOwnPropertyDescriptor(imgProto, 'src');
+    Object.defineProperty(imgProto, 'src', {
+        get: originalSrcDesc.get,
+        set: function(newSrc) {
+            // 拦截赋值
+            originalSrcDesc.set.call(this, replaceSrc(newSrc));
+        }
+    });
+
+    // —— 方法二：重写 setAttribute，拦截 <img>.setAttribute('src', …) —— //
+    const elemProto = Element.prototype;
+    const originalSetAttr = elemProto.setAttribute;
+    elemProto.setAttribute = function(name, value) {
+        if (this.tagName === 'IMG' && name.toLowerCase() === 'src') {
+            value = replaceSrc(value);
+        }
+        return originalSetAttr.call(this, name, value);
+    };
+
+    // —— 方法三：DOMContentLoaded 后修正已经存在的 <img> —— //
+    window.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('img').forEach(img => {
+            const fixed = replaceSrc(img.getAttribute('src'));
+            if (fixed !== img.getAttribute('src')) {
+                img.setAttribute('src', fixed);
+            }
+        });
+    });
 
     function ATKprint(num) {
         return Math.floor(num) + "." + (Math.floor((num - Math.floor(num)) * 10))
