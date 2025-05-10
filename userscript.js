@@ -12,45 +12,66 @@
 
 (function () {
     'use strict'
-    
-    const LOADING1 = 'https://ruarua.ru/api/pic/gif/loading1.webp';
 
-    // 如果 src 是 loading2.webp 或 loading3.webp，就返回 loading1，否则原样返回
+    // 配置项： 'angelslime' | 'none' | 'random'
+    const animationType = GM_getValue('animationType', 'angelslime');
+    const angelslime = 'https://ruarua.ru/api/pic/gif/loading1.webp';
+
     function replaceSrc(src) {
         if (!src) return src;
-        if (src.endsWith('loading2.webp') || src.endsWith('loading3.webp')) {
-            return LOADING1;
+        if (src.endsWith('angelslime.webp') || src.endsWith('loading2.webp') || src.endsWith('loading3.webp')) {
+            if (animationType === 'angelslime') {
+                return angelslime;
+            } else if (animationType === 'none') {
+                return '';
+            } else if (animationType === 'random') {
+                return src;
+            }
         }
         return src;
     }
 
-    // —— 方法一：重写 HTMLImageElement.prototype.src —— //
+    // 重写 HTMLImageElement.prototype.src
     const imgProto = HTMLImageElement.prototype;
     const originalSrcDesc = Object.getOwnPropertyDescriptor(imgProto, 'src');
     Object.defineProperty(imgProto, 'src', {
         get: originalSrcDesc.get,
-        set: function(newSrc) {
-            // 拦截赋值
-            originalSrcDesc.set.call(this, replaceSrc(newSrc));
+        set: function (newSrc) {
+            const fixed = replaceSrc(newSrc);
+            if (fixed === '') {
+                this.remove();
+            } else {
+                originalSrcDesc.set.call(this, fixed);
+            }
         }
     });
 
-    // —— 方法二：重写 setAttribute，拦截 <img>.setAttribute('src', …) —— //
+    // 重写 Element.prototype.setAttribute 拦截 setAttribute('src', ...)
     const elemProto = Element.prototype;
     const originalSetAttr = elemProto.setAttribute;
-    elemProto.setAttribute = function(name, value) {
+    elemProto.setAttribute = function (name, value) {
         if (this.tagName === 'IMG' && name.toLowerCase() === 'src') {
-            value = replaceSrc(value);
+            const fixed = replaceSrc(value);
+            if (fixed === '') {
+                this.remove();
+                return;
+            } else {
+                value = fixed;
+            }
         }
         return originalSetAttr.call(this, name, value);
     };
 
-    // —— 方法三：DOMContentLoaded 后修正已经存在的 <img> —— //
-    window.addEventListener('DOMContentLoaded', function() {
+    // DOMContentLoaded 后修正已有 <img>
+    window.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('img').forEach(img => {
             const fixed = replaceSrc(img.getAttribute('src'));
             if (fixed !== img.getAttribute('src')) {
-                img.setAttribute('src', fixed);
+                if (fixed === '') {
+                    img.remove();
+                } else {
+                    img.setAttribute('src', fixed);
+                }
             }
         });
     });
@@ -60,7 +81,7 @@
     }
 
     function loadCaptcha() { var w = unsafeWindow, C = '___grecaptcha_cfg', cfg = w[C] = w[C] || {}, N = 'grecaptcha'; var gr = w[N] = w[N] || {}; gr.ready = gr.ready || function (f) { (cfg['fns'] = cfg['fns'] || []).push(f); }; w['__recaptcha_api'] = 'https://recaptcha.net/recaptcha/api2/'; (cfg['render'] = cfg['render'] || []).push('6LdeDqopAAAAAFhBk3q_TY7uB4QjU1QJ26viqZzm'); (cfg['clr'] = cfg['clr'] || []).push('true'); w['__google_recaptcha_client'] = true; var d = document, po = d.createElement('script'); po.type = 'text/javascript'; po.async = true; po.charset = 'utf-8'; var v = w.navigator, m = d.createElement('meta'); m.httpEquiv = 'origin-trial'; m.content = 'A6iYDRdcg1LVww9DNZEU+JUx2g1IJxSxk4P6F+LimR0ElFa38FydBqtz/AmsKdGr11ZooRgDPCInHJfGzwtR+A4AAACXeyJvcmlnaW4iOiJodHRwczovL3d3dy5yZWNhcHRjaGEubmV0OjQ0MyIsImZlYXR1cmUiOiJEaXNhYmxlVGhpcmRQYXJ0eVN0b3JhZ2VQYXJ0aXRpb25pbmczIiwiZXhwaXJ5IjoxNzU3OTgwODAwLCJpc1N1YmRvbWFpbiI6dHJ1ZSwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ=='; if (v && v.cookieDeprecationLabel) { v.cookieDeprecationLabel.getValue().then(function (l) { if (l !== 'treatment_1.1' && l !== 'treatment_1.2' && l !== 'control_1.1') { d.head.prepend(m); } }); } else { d.head.prepend(m); } var m = d.createElement('meta'); m.httpEquiv = 'origin-trial'; m.content = '3NNj0GXVktLOmVKwWUDendk4Vq2qgMVDBDX+Sni48ATJl9JBj+zF+9W2HGB3pvt6qowOihTbQgTeBm9SKbdTwYAAABfeyJvcmlnaW4iOiJodHRwczovL3JlY2FwdGNoYS5uZXQ6NDQzIiwiZmVhdHVyZSI6IlRwY2QiLCJleHBpcnkiOjE3MzUzNDM5OTksImlzVGhpcmRQYXJ0eSI6dHJ1ZX0='; d.head.prepend(m); po.src = 'https://www.gstatic.com/recaptcha/releases/ItfkQiGBlJDHuTkOhlT3zHpB/recaptcha__zh_cn.js'; po.crossOrigin = 'anonymous'; po.integrity = 'sha384-UF8pAykZ+VBSDcjXDEt2VvikemnguufrcXs9KUn/cNlu5UOpsyb3P1RhkXBdRuLk'; var e = d.querySelector('script[nonce]'), n = e && (e['nonce'] || e.getAttribute('nonce')); if (n) { po.setAttribute('nonce', n); } var s = d.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s); };
-    
+
     const auto_scroll = {
         _value: GM_getValue("auto_scroll", true),
         get value() {
@@ -388,15 +409,15 @@
 
     function refreshMobData() {
         fetch("https://raccon-api.davidx.top/")
-        .then(response => response.json())
-        .then(data => {
-            GM_setValue("mobValues", data)
-            return 0
-        })
-        .catch(err => {
-            console.error("Data refresh error", err)
-            return 1
-        })
+            .then(response => response.json())
+            .then(data => {
+                GM_setValue("mobValues", data)
+                return 0
+            })
+            .catch(err => {
+                console.error("Data refresh error", err)
+                return 1
+            })
     }
 
     function slotConvert(rar) {
@@ -457,7 +478,7 @@
         return 0
     }
     function DEFcalc(mob, rar) {
-        if(mob=="Angel Slime"){
+        if (mob == "Angel Slime") {
             return 0
         }
         let returnValue = slotConvert(rar) * rarityATK(rar);
@@ -588,7 +609,7 @@
                     console.log(mobName + " " + mobRarity)
                     const newDiv = document.createElement('div')
                     newDiv.style.marginBottom = '10px'
-                    newDiv.innerHTML = `<b><span style="color: #7eef6d;">CalcDEF: </span><span style="color: #fff;">` + ATKprint(DEFcalc(mobName, mobRarity) + 0.00075) +`</span></b>`
+                    newDiv.innerHTML = `<b><span style="color: #7eef6d;">CalcDEF: </span><span style="color: #fff;">` + ATKprint(DEFcalc(mobName, mobRarity) + 0.00075) + `</span></b>`
 
                     const defenseDiv = Array.from(cardInfo.querySelectorAll('div')).find(div =>
                         div.innerText.includes('Defense')
@@ -912,6 +933,32 @@
                 chatScroll()
                 auto_scroll.value = false
             }
+            newMessageValue = ""
+            document.getElementById("message").value = newMessageValue
+        }
+        //使用方法：.animation angelslime/none/random
+        if (newMessageValue.slice(0, 11) === ".animation ") {
+            newMessageValue = newMessageValue.slice(12)
+            if (newMessageValue.slice(0, 10) === "angelslime") {
+                document.getElementById("board").innerHTML = document.getElementById("board").innerHTML +
+                    "<div><span style=\"color: #7eef6d\">[SCRIPT] Animation Type: Angel Slime only</span></div>"
+                GM_setValue('animationType', 'angelslime');
+            }
+            else if (newMessageValue.slice(0, 4) === "none") {
+                document.getElementById("board").innerHTML = document.getElementById("board").innerHTML +
+                    "<div><span style=\"color: #7eef6d\">[SCRIPT] Animation Type: None</span></div>"
+                GM_setValue('animationType', 'none');
+            }
+            else if (newMessageValue.slice(0, 6) === "random") {
+                document.getElementById("board").innerHTML = document.getElementById("board").innerHTML +
+                    "<div><span style=\"color: #7eef6d\">[SCRIPT] Animation Type: Random (Unchanged)</span></div>"
+                GM_setValue('animationType', 'random');
+            }
+            else {
+                document.getElementById("board").innerHTML = document.getElementById("board").innerHTML +
+                    "<div><span style=\"color: #7eef6d\">[SCRIPT] </span><span style=\"color: #7f0000\">Error: Invalid animation type, can only be angelslime/none/random</span></div>"
+            }
+            chatScroll()
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
@@ -1259,10 +1306,10 @@
         //使用方法：.pos pos，如.pos 24可以打开City4
         if (newMessageValue.slice(0, 5) === ".pos ") {
             newMessageValue = newMessageValue.slice(6)
-            function ourChoosePos(thepos){
-                grecaptcha.ready(function() {
-                    grecaptcha.execute("6LdeDqopAAAAAFhBk3q_TY7uB4QjU1QJ26viqZzm", {action: "submit"}).then(function(token) {
-                        var url =  "https://ruarua.ru/mob?pos=" + thepos + "&token=" + token;
+            function ourChoosePos(thepos) {
+                grecaptcha.ready(function () {
+                    grecaptcha.execute("6LdeDqopAAAAAFhBk3q_TY7uB4QjU1QJ26viqZzm", { action: "submit" }).then(function (token) {
+                        var url = "https://ruarua.ru/mob?pos=" + thepos + "&token=" + token;
                         reloadPjax(url, 0, 0)
                     });
                 });
