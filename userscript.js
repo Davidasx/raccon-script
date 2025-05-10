@@ -95,7 +95,10 @@
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
-    document.getElementsByClassName("bgfull")[0].style = ""
+    const bg = GM_getValue("bg_display", false)
+    if (!bg) {
+        document.getElementsByClassName("bgfull")[0].style = ""
+    }
     if (document.cookie.match("nohorizon") === null) {
         document.cookie = "nohorizon=1; path=/; domain=ruarua.ru; expires=Mon, 01 Jan 2123 00:00:00 GMT";
     }
@@ -959,6 +962,24 @@
                     "<div><span style=\"color: #7eef6d\">[SCRIPT] </span><span style=\"color: #7f0000\">Error: Invalid animation type, can only be angelslime/none/random</span></div>"
             }
             chatScroll()
+            newMessageValue = ""
+            document.getElementById("message").value = newMessageValue
+        }
+        //使用方法：.bg off/on，可以开启或关闭背景图片（刷新生效）
+        if (newMessageValue.slice(0, 4) === ".bg ") {
+            newMessageValue = newMessageValue.slice(5)
+            if (newMessageValue.slice(0, 2) === "on") {
+                document.getElementById("board").innerHTML = document.getElementById("board").innerHTML +
+                    "<div><span style=\"color: #7eef6d\">[SCRIPT] Background turned on, refresh to take effect!</span></div>"
+                chatScroll()
+                GM_setValue('bg_display', true)
+            }
+            if (newMessageValue.slice(0, 3) === "off") {
+                document.getElementById("board").innerHTML = document.getElementById("board").innerHTML +
+                    "<div><span style=\"color: #7eef6d\">[SCRIPT] Background turned off, refresh to take effect!</span></div>"
+                chatScroll()
+                GM_setValue('bg_display', false)
+            }
             newMessageValue = ""
             document.getElementById("message").value = newMessageValue
         }
